@@ -4,7 +4,7 @@
 
 * **Universidade:** UNICAP — Universidade Católica de Pernambuco
 * **Curso:** Sistemas para Internet
-* **Cadeira:** Aplicações Orientadas a Serviços
+* **Cadeira:** Programação para Dispositivos Móveis
 * **Período:** 2026.1
 
 👥 Equipe de Desenvolvimento e RAs
