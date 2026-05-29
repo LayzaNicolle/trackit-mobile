@@ -2,10 +2,10 @@
 
 🏫 Informações Acadêmicas
 
-Universidade: UNICAP — Universidade Católica de Pernambuco
-Curso: Sistemas para Internet
-Cadeira: Programação para Dispositivos Móveis
-Período: 2026.1
+* **Universidade:** UNICAP — Universidade Católica de Pernambuco
+* **Curso:** Sistemas para Internet
+* **Cadeira:** Aplicações Orientadas a Serviços
+* **Período:** 2026.1
 
 👥 Equipe de Desenvolvimento e RAs
 
