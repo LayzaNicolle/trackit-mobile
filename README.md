@@ -26,4 +26,4 @@ O TrackIt Mobile é o aplicativo que consome a API RESTful do TrackIt Back-end. 
 - Navegação: Expo Router
 - Gerenciamento de Estado Global: Zustand
 - Consumo de API & Cache: Axios + TanStack Query (React Query)
-- Estilização / UI Kit: 
+- Estilização / UI Kit: React Native Paper
