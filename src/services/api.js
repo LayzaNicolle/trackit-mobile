@@ -1,11 +1,11 @@
 import axios from 'axios';
-import { useAuthStore } from '../stores/authStore';
 
 const api = axios.create({
   baseURL: 'https://trackit-backend-alpha.vercel.app', 
 });
 
 api.interceptors.request.use((config) => {
+  const { useAuthStore } = require('../stores/authStore');
   const token = useAuthStore.getState().token;
   
   if (token) {

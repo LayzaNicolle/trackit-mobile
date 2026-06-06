@@ -23,18 +23,18 @@
     "plugins": [
       "expo-router"
     ],
-    "owner": "layzanicolle",
+    "owner": "unicap-20261-mobile",
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "6794260c-ad60-488d-ba88-5e5da1c56d40"
+        "projectId": "5d586780-078b-4840-a997-80828400e89c"
       }
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/6794260c-ad60-488d-ba88-5e5da1c56d40"
+      "url": "https://u.expo.dev/5d586780-078b-4840-a997-80828400e89c"
     }
   }
 }
