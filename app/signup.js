@@ -9,7 +9,7 @@ export default function Signup() {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
 
   const signupMutation = useMutation({
-    mutationFn: (userData) => api.post('/api/auth/signup', userData),
+    mutationFn: (userData) => api.post('/auth/signup', userData),
     onSuccess: () => {
       alert('Cadastro realizado!');
       router.replace('/login');
@@ -20,12 +20,8 @@ export default function Signup() {
     }
   });
 
-  const handleGoBack = () => router.canGoBack() ? router.back() : router.replace('/login');
-
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-      <IconButton icon="arrow-left" size={28} onPress={handleGoBack} style={styles.backButton} />
-      
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text variant="headlineLarge" style={styles.title}>Criar conta</Text>
@@ -45,6 +41,15 @@ export default function Signup() {
             disabled={signupMutation.isPending}
           >
             {signupMutation.isPending ? <ActivityIndicator color="white" /> : "Finalizar cadastro"}
+          </Button>
+
+          <Button 
+            mode="text" 
+            onPress={() => router.replace('/login')}
+            style={{ marginTop: 8 }}
+            textColor="#6200EE"
+          >
+            Já tem conta? Faça login
           </Button>
         </Surface>
       </ScrollView>
