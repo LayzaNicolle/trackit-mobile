@@ -3,7 +3,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function TabsLayout() {
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: '#6200ee' }}>
+    <Tabs 
+      screenOptions={{ 
+        tabBarActiveTintColor: '#6200ee',
+        headerShown: true 
+      }}
+    >
+      {/* Home (Já existente) */}
       <Tabs.Screen
         name="index"
         options={{
@@ -14,7 +20,28 @@ export default function TabsLayout() {
           ),
         }}
       />
-      {/* aqui coloca os arquivos items.js e loans.js serão criados por Matheus e Vinicius */}
+
+      {/* Matheus: CRUD de Itens */}
+      <Tabs.Screen
+        name="items"
+        options={{
+          title: 'Meus Itens',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="package-variant" size={size} color={color} />
+          ),
+        }}
+      />
+
+      {/* Vinícius: Gestão de Empréstimos */}
+      <Tabs.Screen
+        name="loans"
+        options={{
+          title: 'Empréstimos',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="handshake" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
