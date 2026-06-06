@@ -1,36 +1,33 @@
 import { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { TextInput, Button, Text, IconButton, Surface, ActivityIndicator } from 'react-native-paper';
+import { TextInput, Button, Text, Surface, ActivityIndicator } from 'react-native-paper';
 import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import api from '../src/services/api';
 import { useAuthStore } from '../src/stores/authStore'; 
+
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
-  const { setToken } = useAuthStore(); 
+  const { setAuth } = useAuthStore(); 
 
   const loginMutation = useMutation({
-    mutationFn: (userData) => api.post('/api/auth/login', userData),
+    mutationFn: (userData) => api.post('/auth/login', userData),
     onSuccess: (res) => {
-      
-      const token = res.data.token; 
-      setToken(token);
-      
-      
+      const token = res.data.token;
+      const user = res.data.user;
+      setAuth(token, user);
       router.replace('/(tabs)');
     },
     onError: (err) => {
-      console.log("Erro no login:", err.response?.data);
-      alert("Erro: " + (err.response?.data?.error || "Falha na conexão"));
+      console.log("Erro completo:", err.message);
+      console.log("Erro response:", err.response?.data);
+      console.log("Erro status:", err.response?.status);
+      alert("Erro: " + (err.response?.data?.error || err.message || "Falha na conexão"));
     }
   });
 
-  const handleGoBack = () => router.canGoBack() ? router.back() : router.replace('/');
-
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-      <IconButton icon="arrow-left" size={28} onPress={handleGoBack} style={styles.backButton} />
-      
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text variant="headlineLarge" style={styles.title}>TrackIt</Text>
@@ -58,6 +55,15 @@ export default function Login() {
           >
             {loginMutation.isPending ? <ActivityIndicator color="white" /> : "Entrar"}
           </Button>
+
+          <Button 
+            mode="text" 
+            onPress={() => router.navigate('/signup')}
+            style={{ marginTop: 8 }}
+            textColor="#6200EE"
+          >
+            Não tem conta? Cadastre-se
+          </Button>
         </Surface>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -67,7 +73,6 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAFAFA' },
   scrollContainer: { padding: 25, flexGrow: 1, justifyContent: 'center' },
-  backButton: { position: 'absolute', top: 50, left: 15, zIndex: 10 },
   header: { alignItems: 'center', marginBottom: 40 },
   title: { fontWeight: '800', color: '#1A1A1A', letterSpacing: -0.5 },
   subtitle: { color: '#757575', marginTop: 8 },
