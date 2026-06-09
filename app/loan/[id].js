@@ -47,16 +47,14 @@ export default function LoanDetailsScreen() {
 
 
   async function loadLoan() {
-    try {
-      const response = await api.get(`/loans/${id}`);
-
-     
-      setLoan(response.data || null);
-    } catch (error) {
-      console.log(error);
-      setLoan(null);
-    }
+  try {
+    const response = await api.get(`/loans/${id}`);
+    setLoan(response.data || null);
+  } catch (error) {
+    console.log(error);
+    setLoan(null);
   }
+}
 
  
   async function loadEvents() {

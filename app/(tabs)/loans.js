@@ -32,11 +32,7 @@ import api from "../../src/services/api";
 export default function LoansScreen() {
   const router = useRouter();
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
-
   const [loading, setLoading] = useState(true);
-
   const [loansData, setLoansData] = useState({
     coisasQueMeDevem: [],
     coisasQueEuDevo: [],
@@ -54,7 +50,6 @@ export default function LoansScreen() {
 
   const [creatingLoan, setCreatingLoan] = useState(false);
 
-  // 🔥 SEMPRE BUSCA REAL
   async function fetchLoans() {
     try {
       setLoading(true);
@@ -93,22 +88,66 @@ export default function LoansScreen() {
     setModalVisible(true);
   }
 
-  function normalizeStatus(status) {
+  function isValidDate(date) {
+    return /^\d{2}\/\d{2}\/\d{4}$/.test(date);
+  }
+
+  function toISO(date) {
+    const [d, m, y] = date.split("/");
+    return `${y}-${m}-${d}`;
+  }
+
+  // 🔥 VOLTOU ORIGINAL (não quebrar criação)
+  async function createLoan() {
+    try {
+      if (!borrowerId || !itemId || !dueDate) {
+        Alert.alert("Atenção", "Preencha todos os campos");
+        return;
+      }
+
+      if (!isValidDate(dueDate)) {
+        Alert.alert("Data inválida", "Use DD/MM/AAAA");
+        return;
+      }
+
+      setCreatingLoan(true);
+
+      await api.post("/loans", {
+        borrowerId: Number(borrowerId),
+        itemId: Number(itemId),
+        dueDate: toISO(dueDate),
+      });
+
+      setModalVisible(false);
+      setBorrowerId("");
+      setItemId("");
+      setDueDate("");
+
+      await fetchLoans();
+
+      Alert.alert("Sucesso", "Empréstimo criado");
+    } catch (error) {
+      Alert.alert("Erro", "Falha ao criar empréstimo");
+    } finally {
+      setCreatingLoan(false);
+    }
+  }
+
+  // 🔥 APENAS PADRONIZA VISUAL
+  function formatStatus(status) {
     const s = (status || "").toLowerCase();
 
-    if (["active", "ativo"].includes(s)) return "ATIVO";
-    if (["returned", "devolvido"].includes(s)) return "DEVOLVIDO";
-    if (["returning"].includes(s)) return "DEVOLVENDO";
+    if (s === "active") return "ATIVO";
+    if (s === "devolvido" || s === "returned") return "DEVOLVIDO";
 
-    return s.toUpperCase();
+    return (status || "").toUpperCase();
   }
 
   function getStatusColor(status) {
     const s = (status || "").toLowerCase();
 
-    if (["active", "ativo"].includes(s)) return "#FF9800";
-    if (["returned", "devolvido"].includes(s)) return "#4CAF50"; // VERDE CERTO
-    if (["returning"].includes(s)) return "#2196F3";
+    if (s === "active") return "#FF9800";
+    if (s === "devolvido" || s === "returned") return "#4CAF50";
 
     return "#6200ee";
   }
@@ -119,8 +158,8 @@ export default function LoansScreen() {
     return loans.filter((loan) => {
       const s = (loan.status || "").toLowerCase();
 
-      if (selectedFilter === "ativo") return s === "active" || s === "ativo";
-      if (selectedFilter === "devolvido") return s === "returned" || s === "devolvido";
+      if (selectedFilter === "ativo") return s === "active";
+      if (selectedFilter === "devolvido") return s === "devolvido" || s === "returned";
 
       return true;
     });
@@ -148,11 +187,9 @@ export default function LoansScreen() {
           <Chip selected={selectedFilter === "ALL"} onPress={() => setSelectedFilter("ALL")}>
             Todos
           </Chip>
-
           <Chip selected={selectedFilter === "ativo"} onPress={() => setSelectedFilter("ativo")}>
             Ativos
           </Chip>
-
           <Chip selected={selectedFilter === "devolvido"} onPress={() => setSelectedFilter("devolvido")}>
             Devolvidos
           </Chip>
@@ -165,7 +202,7 @@ export default function LoansScreen() {
             <Card.Content>
               <Text>{loan.item_name}</Text>
               <Text style={{ color: getStatusColor(loan.status), fontWeight: "bold" }}>
-                {normalizeStatus(loan.status)}
+                {formatStatus(loan.status)}
               </Text>
             </Card.Content>
           </Card>
@@ -178,14 +215,13 @@ export default function LoansScreen() {
             <Card.Content>
               <Text>{loan.item_name}</Text>
               <Text style={{ color: getStatusColor(loan.status), fontWeight: "bold" }}>
-                {normalizeStatus(loan.status)}
+                {formatStatus(loan.status)}
               </Text>
             </Card.Content>
           </Card>
         ))}
       </ScrollView>
 
-      {/* MODAL (mantido) */}
       <Portal>
         <Modal visible={modalVisible} onDismiss={() => setModalVisible(false)}>
           <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
@@ -195,6 +231,7 @@ export default function LoansScreen() {
 
                 <Text>Usuário</Text>
                 <Picker selectedValue={borrowerId} onValueChange={setBorrowerId}>
+                  <Picker.Item label="Selecione usuário" value="" />
                   {users.map((u) => (
                     <Picker.Item key={u.id} label={u.name} value={String(u.id)} />
                   ))}
@@ -202,14 +239,21 @@ export default function LoansScreen() {
 
                 <Text>Item</Text>
                 <Picker selectedValue={itemId} onValueChange={setItemId}>
+                  <Picker.Item label="Selecione item" value="" />
                   {items.map((i) => (
                     <Picker.Item key={i.id} label={i.name} value={String(i.id)} />
                   ))}
                 </Picker>
 
-                <TextInput value={dueDate} onChangeText={setDueDate} label="Data" />
+                <TextInput
+                  value={dueDate}
+                  onChangeText={setDueDate}
+                  label="Data (DD/MM/AAAA)"
+                />
 
-                <Button onPress={() => setModalVisible(false)}>Fechar</Button>
+                <Button loading={creatingLoan} onPress={createLoan}>
+                  Criar Empréstimo
+                </Button>
               </ScrollView>
             </TouchableWithoutFeedback>
           </KeyboardAvoidingView>
