@@ -1,20 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { StyleSheet, View, ScrollView, ActivityIndicator } from 'react-native';
 import { Text, Card, Button, Avatar, List, Divider, Modal, Portal, Provider } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore } from '../../src/stores/authStore';
 import api from '../../src/services/api';
 import { useRouter } from 'expo-router';
+
+function normalizeStatus(status) {
+  return (status || "").toLowerCase();
+}
+
+function isReturned(status) {
+  return ["returned", "devolvido"].includes(normalizeStatus(status));
+}
 
 export default function Home() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, logout } = useAuthStore();
-  const userId = user?.id || 1; 
+  const userId = user?.id || 1;
 
   const [filtro, setFiltro] = useState(null);
   const [emprestimoSelecionado, setEmprestimoSelecionado] = useState(null);
   const [modalVisivel, setModalVisivel] = useState(false);
+
+ 
+  useFocusEffect(
+    useCallback(() => {
+      queryClient.invalidateQueries({ queryKey: ['userLoans'] });
+    }, [])
+  );
 
   const { data: dbItems = [] } = useQuery({
     queryKey: ['allDbItems'],
@@ -46,18 +62,21 @@ export default function Home() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['userLoans', userId]);
+      queryClient.invalidateQueries({ queryKey: ['userLoans'] });
+      queryClient.invalidateQueries({ queryKey: ['allDbItems'] });
+      fecharModal();
+    },
+    onError: () => {
       fecharModal();
     },
   });
 
   const traduzirStatus = (status) => {
-    if (!status) return '';
-    const s = status.toLowerCase();
-    if (s === 'active') return 'Em andamento';
+    const s = normalizeStatus(status);
+    if (s === 'active' || s === 'ativo') return 'Em andamento';
     if (s === 'pending') return 'Pendente';
-    if (s === 'returned') return 'Devolvido';
-    return status;
+    if (isReturned(s)) return 'Devolvido';
+    return status || '';
   };
 
   const mesclarDadosEmprestimo = (loanArray) => {
@@ -97,15 +116,17 @@ export default function Home() {
   );
 
   const emprestimosQueMeDevem = emprestimosTratados.filter(
-    (l) => Number(l.lender_id) === Number(userId) && l.status !== 'returned'
+    (l) => Number(l.lender_id) === Number(userId) && !isReturned(l.status)
   );
   const emprestimosQueEuDevo = emprestimosTratados.filter(
-    (l) => Number(l.borrower_id) === Number(userId) && l.status !== 'returned'
+    (l) => Number(l.borrower_id) === Number(userId) && !isReturned(l.status)
   );
 
   const teDevemQuantidade = emprestimosQueMeDevem.length;
   const voceDeveQuantidade = emprestimosQueEuDevo.length;
-  const emprestimosFiltrados = filtro === 'devem' ? emprestimosQueMeDevem : filtro === 'devo' ? emprestimosQueEuDevo : [];
+  const emprestimosFiltrados =
+    filtro === 'devem' ? emprestimosQueMeDevem :
+    filtro === 'devo' ? emprestimosQueEuDevo : [];
 
   const abrirModal = (item) => {
     setEmprestimoSelecionado(item);
@@ -119,7 +140,7 @@ export default function Home() {
 
   const handleConfirmarDevolucao = () => {
     if (emprestimoSelecionado) {
-      updateLoanMutation.mutate({ id: emprestimoSelecionado.id, status: 'returned' });
+      updateLoanMutation.mutate({ id: emprestimoSelecionado.id, status: 'devolvido' });
     }
   };
 
@@ -128,7 +149,7 @@ export default function Home() {
       <ScrollView style={styles.container}>
         <View style={styles.header}>
           <View style={styles.userInfo}>
-            <Avatar.Text size={48} label={user?.name ? user.name.substring(0,2).toUpperCase() : "CS"} />
+            <Avatar.Text size={48} label={user?.name ? user.name.substring(0, 2).toUpperCase() : "CS"} />
             <View style={styles.userText}>
               <Text variant="titleMedium">Olá, {user?.name || 'Carlos Silva'}!</Text>
               <Text variant="bodySmall" style={{ color: 'gray' }}>
@@ -153,12 +174,14 @@ export default function Home() {
         ) : (
           <View>
             <View style={styles.cardContainer}>
-              <Card 
-                style={[styles.card, filtro === 'devem' && styles.cardSelecionadoDevem]} 
+              <Card
+                style={[styles.card, filtro === 'devem' && styles.cardSelecionadoDevem]}
                 onPress={() => setFiltro(filtro === 'devem' ? null : 'devem')}
               >
                 <Card.Content style={{ backgroundColor: '#e8f5e9', borderRadius: 12 }}>
-                  <Text variant="titleMedium" style={{ color: '#2e7d32', fontWeight: filtro === 'devem' ? 'bold' : 'normal' }}>Te Devem</Text>
+                  <Text variant="titleMedium" style={{ color: '#2e7d32', fontWeight: filtro === 'devem' ? 'bold' : 'normal' }}>
+                    Te Devem
+                  </Text>
                   <Text variant="displaySmall" style={{ color: '#2e7d32', fontWeight: 'bold' }}>
                     {teDevemQuantidade} {teDevemQuantidade === 1 ? 'item' : 'itens'}
                   </Text>
@@ -168,12 +191,14 @@ export default function Home() {
                 </Card.Content>
               </Card>
 
-              <Card 
-                style={[styles.card, filtro === 'devo' && styles.cardSelecionadoDevo]} 
+              <Card
+                style={[styles.card, filtro === 'devo' && styles.cardSelecionadoDevo]}
                 onPress={() => setFiltro(filtro === 'devo' ? null : 'devo')}
               >
                 <Card.Content style={{ backgroundColor: '#ffebee', borderRadius: 12 }}>
-                  <Text variant="titleMedium" style={{ color: '#c62828', fontWeight: filtro === 'devo' ? 'bold' : 'normal' }}>Você Deve</Text>
+                  <Text variant="titleMedium" style={{ color: '#c62828', fontWeight: filtro === 'devo' ? 'bold' : 'normal' }}>
+                    Você Deve
+                  </Text>
                   <Text variant="displaySmall" style={{ color: '#c62828', fontWeight: 'bold' }}>
                     {voceDeveQuantidade} {voceDeveQuantidade === 1 ? 'item' : 'itens'}
                   </Text>
@@ -189,7 +214,7 @@ export default function Home() {
                 <Text variant="titleLarge" style={styles.listaTitle}>
                   {filtro === 'devem' ? 'Itens que pegaram com você:' : 'Itens que você pegou emprestado:'}
                 </Text>
-                
+
                 {emprestimosFiltrados.length === 0 ? (
                   <Text style={styles.listaVazia}>Nenhum item pendente nesta categoria.</Text>
                 ) : (
@@ -198,14 +223,14 @@ export default function Home() {
                       <List.Item
                         title={item.item_name}
                         description={`ID do Empréstimo: #${item.id} | Status: ${traduzirStatus(item.status)}`}
-                        left={props => (
-                          <List.Icon 
-                            {...props} 
-                            icon={filtro === 'devem' ? "arrow-up-bold-box-outline" : "arrow-down-bold-box-outline"} 
+                        left={(props) => (
+                          <List.Icon
+                            {...props}
+                            icon={filtro === 'devem' ? "arrow-up-bold-box-outline" : "arrow-down-bold-box-outline"}
                             color={filtro === 'devem' ? '#2e7d32' : '#c62828'}
                           />
                         )}
-                        right={props => (
+                        right={() => (
                           <Text style={styles.dataTexto}>
                             Prazo: {item.due_date ? new Date(item.due_date).toLocaleDateString('pt-BR') : 'Sem data'}
                           </Text>
@@ -227,20 +252,33 @@ export default function Home() {
               <View>
                 <Text variant="titleLarge" style={styles.modalTitle}>Detalhes do Empréstimo</Text>
                 <Divider style={{ marginBottom: 12 }} />
-                
-                <Text variant="bodyMedium" style={styles.modalLinha}>📦 <Text style={{ fontWeight: 'bold' }}>Item:</Text> {emprestimoSelecionado.item_name}</Text>
-                <Text variant="bodyMedium" style={styles.modalLinha}>🔑 <Text style={{ fontWeight: 'bold' }}>ID do Empréstimo:</Text> #{emprestimoSelecionado.id}</Text>
-                <Text variant="bodyMedium" style={styles.modalLinha}>📊 <Text style={{ fontWeight: 'bold' }}>Status Atual:</Text> {traduzirStatus(emprestimoSelecionado.status)}</Text>
+
                 <Text variant="bodyMedium" style={styles.modalLinha}>
-                  📅 <Text style={{ fontWeight: 'bold' }}>Prazo de Entrega:</Text> {emprestimoSelecionado.due_date ? new Date(emprestimoSelecionado.due_date).toLocaleDateString('pt-BR') : 'Não definido'}
+                  📦 <Text style={{ fontWeight: 'bold' }}>Item:</Text> {emprestimoSelecionado.item_name}
+                </Text>
+                <Text variant="bodyMedium" style={styles.modalLinha}>
+                  🔑 <Text style={{ fontWeight: 'bold' }}>ID do Empréstimo:</Text> #{emprestimoSelecionado.id}
+                </Text>
+                <Text variant="bodyMedium" style={styles.modalLinha}>
+                  📊 <Text style={{ fontWeight: 'bold' }}>Status Atual:</Text> {traduzirStatus(emprestimoSelecionado.status)}
+                </Text>
+                <Text variant="bodyMedium" style={styles.modalLinha}>
+                  📅 <Text style={{ fontWeight: 'bold' }}>Prazo de Entrega:</Text>{" "}
+                  {emprestimoSelecionado.due_date
+                    ? new Date(emprestimoSelecionado.due_date).toLocaleDateString('pt-BR')
+                    : 'Não definido'}
                 </Text>
 
                 {filtro === 'devem' ? (
                   <View style={{ marginTop: 12 }}>
-                    <Text variant="bodyMedium" style={styles.modalLinha}>👤 <Text style={{ fontWeight: 'bold' }}>Quem pegou:</Text> {emprestimoSelecionado.borrower_name}</Text>
-                    <Text variant="bodyMedium" style={styles.modalLinha}>✉️ <Text style={{ fontWeight: 'bold' }}>Contato:</Text> {emprestimoSelecionado.borrower_email}</Text>
-                    <Button 
-                      mode="contained" 
+                    <Text variant="bodyMedium" style={styles.modalLinha}>
+                      👤 <Text style={{ fontWeight: 'bold' }}>Quem pegou:</Text> {emprestimoSelecionado.borrower_name}
+                    </Text>
+                    <Text variant="bodyMedium" style={styles.modalLinha}>
+                      ✉️ <Text style={{ fontWeight: 'bold' }}>Contato:</Text> {emprestimoSelecionado.borrower_email}
+                    </Text>
+                    <Button
+                      mode="contained"
                       style={{ marginTop: 20, backgroundColor: '#2e7d32' }}
                       loading={updateLoanMutation.isPending}
                       onPress={handleConfirmarDevolucao}
@@ -250,9 +288,15 @@ export default function Home() {
                   </View>
                 ) : (
                   <View style={{ marginTop: 12 }}>
-                    <Text variant="bodyMedium" style={styles.modalLinha}>👤 <Text style={{ fontWeight: 'bold' }}>Dono do item:</Text> {emprestimoSelecionado.lender_name}</Text>
-                    <Text variant="bodyMedium" style={styles.modalLinha}>✉️ <Text style={{ fontWeight: 'bold' }}>Contato:</Text> {emprestimoSelecionado.lender_email}</Text>
-                    <Text style={styles.avisoTexto}>Lembre-se de devolver o item para o dono no prazo combinado!</Text>
+                    <Text variant="bodyMedium" style={styles.modalLinha}>
+                      👤 <Text style={{ fontWeight: 'bold' }}>Dono do item:</Text> {emprestimoSelecionado.lender_name}
+                    </Text>
+                    <Text variant="bodyMedium" style={styles.modalLinha}>
+                      ✉️ <Text style={{ fontWeight: 'bold' }}>Contato:</Text> {emprestimoSelecionado.lender_email}
+                    </Text>
+                    <Text style={styles.avisoTexto}>
+                      Lembre-se de devolver o item para o dono no prazo combinado!
+                    </Text>
                   </View>
                 )}
 
@@ -264,9 +308,9 @@ export default function Home() {
           </Modal>
         </Portal>
 
-        <Button 
-          mode="contained" 
-          style={styles.aboutButton} 
+        <Button
+          mode="contained"
+          style={styles.aboutButton}
           onPress={() => router.push('/sobre')}
         >
           Sobre o Aplicativo
@@ -297,5 +341,5 @@ const styles = StyleSheet.create({
   modalContent: { backgroundColor: 'white', padding: 20, margin: 20, borderRadius: 12 },
   modalTitle: { fontWeight: 'bold', marginBottom: 8 },
   modalLinha: { marginVertical: 4, fontSize: 15 },
-  avisoTexto: { color: '#c62828', fontStyle: 'italic', marginTop: 15, textAlign: 'center', fontSize: 13 }
+  avisoTexto: { color: '#c62828', fontStyle: 'italic', marginTop: 15, textAlign: 'center', fontSize: 13 },
 });
