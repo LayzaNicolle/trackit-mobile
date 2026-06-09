@@ -79,7 +79,6 @@ export default function LoansScreen() {
     }, [])
   );
 
-  // ---------------- USERS ----------------
   async function loadUsers() {
     try {
       const response = await api.get("/users");
@@ -89,7 +88,6 @@ export default function LoansScreen() {
     }
   }
 
-  // ---------------- ITEMS ----------------
   async function loadItems() {
     try {
       const response = await api.get("/items");
@@ -99,7 +97,6 @@ export default function LoansScreen() {
     }
   }
 
-  // ---------------- OPEN MODAL ----------------
   async function openModal() {
     await Promise.all([loadUsers(), loadItems()]);
 
@@ -121,7 +118,6 @@ export default function LoansScreen() {
     ]).start();
   }
 
-  // ---------------- DATE ----------------
   function isValidDate(date) {
     return /^\d{2}\/\d{2}\/\d{4}$/.test(date);
   }
@@ -131,7 +127,6 @@ export default function LoansScreen() {
     return `${y}-${m}-${d}`;
   }
 
-  // ---------------- CREATE ----------------
   async function createLoan() {
     try {
       if (!borrowerId || !itemId || !dueDate) {
@@ -167,13 +162,14 @@ export default function LoansScreen() {
     }
   }
 
-  // ---------------- STATUS (COR + CAPS QUE VOCÊ QUERIA) ----------------
+  // 🔥 ALTERAÇÃO QUE VOCÊ PEDIU
   function formatStatus(status) {
     switch ((status || "").toLowerCase()) {
       case "active":
       case "ativo":
         return "ATIVO";
       case "devolvido":
+      case "returned":
         return "DEVOLVIDO";
       default:
         return (status || "").toUpperCase();
@@ -289,12 +285,8 @@ export default function LoansScreen() {
               <ScrollView contentContainerStyle={styles.modal}>
                 <Text>Novo Empréstimo</Text>
 
-                {/* USERS */}
                 <Text style={styles.label}>Usuário</Text>
-                <Picker
-                  selectedValue={borrowerId}
-                  onValueChange={setBorrowerId}
-                >
+                <Picker selectedValue={borrowerId} onValueChange={setBorrowerId}>
                   <Picker.Item label="Selecione usuário" value="" />
                   {users.map((u) => (
                     <Picker.Item
@@ -305,7 +297,6 @@ export default function LoansScreen() {
                   ))}
                 </Picker>
 
-                {/* ITEMS */}
                 <Text style={styles.label}>Item</Text>
                 <Picker selectedValue={itemId} onValueChange={setItemId}>
                   <Picker.Item label="Selecione item" value="" />
@@ -318,7 +309,6 @@ export default function LoansScreen() {
                   ))}
                 </Picker>
 
-                {/* DATE */}
                 <TextInput
                   label="Data (DD/MM/AAAA)"
                   value={dueDate}
