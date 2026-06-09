@@ -4,8 +4,10 @@ import { Text, Card, Button, Avatar, List, Divider, Modal, Portal, Provider } fr
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../src/stores/authStore';
 import api from '../../src/services/api';
+import { useRouter } from 'expo-router';
 
 export default function Home() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { user, logout } = useAuthStore();
   const userId = user?.id || 1; 
