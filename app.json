@@ -12,13 +12,18 @@
       "backgroundColor": "#2D144B"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.unicap20261mobile.trackit",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#2D144B",
         "foregroundImage": "./assets/logo-trackit.png"
-      }
+      },
+      "package": "com.unicap20261mobile.trackit"
     },
     "web": {
       "favicon": "./assets/favicon.png"
