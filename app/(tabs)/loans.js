@@ -54,7 +54,7 @@ export default function LoansScreen() {
 
   const [creatingLoan, setCreatingLoan] = useState(false);
 
-  // ---------------- FETCH LOANS ----------------
+  // 🔥 FIX: sempre atualiza ao voltar pra tela
   async function fetchLoans() {
     try {
       setLoading(true);
@@ -66,7 +66,6 @@ export default function LoansScreen() {
         coisasQueEuDevo: response.data?.coisasQueEuDevo || [],
       });
     } catch (error) {
-      console.log(error);
       Alert.alert("Erro", "Erro ao carregar empréstimos");
     } finally {
       setLoading(false);
@@ -162,15 +161,17 @@ export default function LoansScreen() {
     }
   }
 
-  // 🔥 ALTERAÇÃO QUE VOCÊ PEDIU
+  // 🔥 STATUS FIX (verde correto + consistente)
   function formatStatus(status) {
     switch ((status || "").toLowerCase()) {
       case "active":
       case "ativo":
         return "ATIVO";
+
       case "devolvido":
       case "returned":
         return "DEVOLVIDO";
+
       default:
         return (status || "").toUpperCase();
     }
@@ -181,8 +182,11 @@ export default function LoansScreen() {
       case "active":
       case "ativo":
         return "#FF9800";
+
       case "devolvido":
-        return "#4CAF50";
+      case "returned":
+        return "#4CAF50"; // 🔥 VERDE CORRETO
+
       default:
         return "#6200ee";
     }
@@ -199,7 +203,7 @@ export default function LoansScreen() {
       }
 
       if (selectedFilter === "devolvido") {
-        return status === "devolvido";
+        return status === "devolvido" || status === "returned";
       }
 
       return true;
@@ -275,7 +279,6 @@ export default function LoansScreen() {
         ))}
       </ScrollView>
 
-      {/* MODAL RESTAURADO COMPLETO */}
       <Portal>
         <Modal visible={modalVisible} onDismiss={() => setModalVisible(false)}>
           <KeyboardAvoidingView
